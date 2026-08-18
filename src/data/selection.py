@@ -63,7 +63,7 @@ def select_liquid_assets_by_sector(
     date_col: str = "date",
     volume_col: str = "volume",
     sector_col: str = "sector",
-) -> list:
+) -> tuple:
     """
     Igual que select_liquid_assets, pero exigiendo un número concreto de
     activos por sector, para asegurar variedad sectorial suficiente y
@@ -76,12 +76,18 @@ def select_liquid_assets_by_sector(
         Diccionario {nombre_sector: n_activos}, p.ej.
         {"Financials": 5, "Energy": 4, "Information Technology": 4, ...}
         Los nombres de sector deben coincidir con los valores de la
-        columna `sector` del dataset original.
+        columna `sector` del dataset original. Se recomienda pedir al
+        menos 2 activos por sector: con un único activo, el "factor
+        sectorial" (su media) coincidiría exactamente con ese activo,
+        haciendo que su componente idiosincrático salga artificialmente
+        nulo en la descomposición de factores posterior.
 
     Returns
     -------
-    list[str]
-        Lista de símbolos seleccionados, agrupados por sector.
+    tuple[list[str], dict[str, str]]
+        (lista de símbolos seleccionados, diccionario {símbolo: sector}).
+        El diccionario se devuelve para no tener que reescribir el mapa de
+        sector a mano en notebooks posteriores.
     """
     mask = (df[date_col] >= pd.Timestamp(start_date)) & (df[date_col] <= pd.Timestamp(end_date))
     window = df.loc[mask]
@@ -93,7 +99,13 @@ def select_liquid_assets_by_sector(
     candidates = window[window[symbol_col].isin(full_history)]
 
     selected = []
+    sector_map = {}
+
     for sector, n in n_per_sector.items():
+        if n < 2:
+            print(f"Aviso: se pidió n={n} para '{sector}'; con menos de 2 activos "
+                  f"el factor sectorial coincidirá con ese único activo.")
+
         sector_candidates = candidates[candidates[sector_col] == sector]
         avg_volume = (
             sector_candidates.groupby(symbol_col)[volume_col]
@@ -103,9 +115,12 @@ def select_liquid_assets_by_sector(
         top_n = avg_volume.head(n).index.tolist()
         if len(top_n) < n:
             print(f"Aviso: solo se encontraron {len(top_n)} activos válidos en '{sector}' (se pedían {n})")
-        selected.extend(top_n)
 
-    return selected
+        selected.extend(top_n)
+        for symbol in top_n:
+            sector_map[symbol] = sector
+
+    return selected, sector_map
 
 
 def compute_daily_log_returns(
