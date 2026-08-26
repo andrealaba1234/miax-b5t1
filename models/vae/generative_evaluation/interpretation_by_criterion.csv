@@ -1,0 +1,8 @@
+criterion,preferred_direction,generative_candidate_id,window_size,value
+val_selection_score,min,0,5,0.2986014187335968
+fidelity_error,min,0,5,0.09392988244138223
+diversity_score,max,3,12,0.0005037056741879434
+latent_smoothness_score,min,0,5,2.4303245838965275e-05
+covariance_error,min,0,5,0.16112976991214453
+covariance_structure,max,1,7,0.9790249021580579
+boundary_discontinuity,min,3,12,0.017725262342949525

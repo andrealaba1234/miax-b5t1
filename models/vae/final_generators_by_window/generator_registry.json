@@ -1,0 +1,56 @@
+{
+  "generators": [
+    {
+      "generative_candidate_id": 0,
+      "window_group": "window_5",
+      "window_size": 5,
+      "architecture": "gru_128",
+      "latent_dim": 64,
+      "best_epoch_from_validation": 520,
+      "validation_score": 0.2986014187335968,
+      "model_path": "..\\models\\vae\\final_generators_by_window\\window_05\\model.pt",
+      "config_path": "..\\models\\vae\\final_generators_by_window\\window_05\\config.json",
+      "scaler_path": "..\\models\\vae\\final_generators_by_window\\window_05\\scaler.joblib",
+      "history_path": "..\\models\\vae\\final_generators_by_window\\window_05\\training_history.csv"
+    },
+    {
+      "generative_candidate_id": 1,
+      "window_group": "window_7",
+      "window_size": 7,
+      "architecture": "gru_128_128",
+      "latent_dim": 64,
+      "best_epoch_from_validation": 740,
+      "validation_score": 0.5374318957328796,
+      "model_path": "..\\models\\vae\\final_generators_by_window\\window_07\\model.pt",
+      "config_path": "..\\models\\vae\\final_generators_by_window\\window_07\\config.json",
+      "scaler_path": "..\\models\\vae\\final_generators_by_window\\window_07\\scaler.joblib",
+      "history_path": "..\\models\\vae\\final_generators_by_window\\window_07\\training_history.csv"
+    },
+    {
+      "generative_candidate_id": 2,
+      "window_group": "window_10",
+      "window_size": 10,
+      "architecture": "gru_256_256",
+      "latent_dim": 48,
+      "best_epoch_from_validation": 272,
+      "validation_score": 0.6956459879875183,
+      "model_path": "..\\models\\vae\\final_generators_by_window\\window_10\\model.pt",
+      "config_path": "..\\models\\vae\\final_generators_by_window\\window_10\\config.json",
+      "scaler_path": "..\\models\\vae\\final_generators_by_window\\window_10\\scaler.joblib",
+      "history_path": "..\\models\\vae\\final_generators_by_window\\window_10\\training_history.csv"
+    },
+    {
+      "generative_candidate_id": 3,
+      "window_group": "window_12_or_15",
+      "window_size": 12,
+      "architecture": "gru_256_256",
+      "latent_dim": 64,
+      "best_epoch_from_validation": 119,
+      "validation_score": 0.7248706221580505,
+      "model_path": "..\\models\\vae\\final_generators_by_window\\window_12\\model.pt",
+      "config_path": "..\\models\\vae\\final_generators_by_window\\window_12\\config.json",
+      "scaler_path": "..\\models\\vae\\final_generators_by_window\\window_12\\scaler.joblib",
+      "history_path": "..\\models\\vae\\final_generators_by_window\\window_12\\training_history.csv"
+    }
+  ]
+}

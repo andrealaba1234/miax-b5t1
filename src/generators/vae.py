@@ -373,6 +373,7 @@ def _run_epoch(
     totals = {
         "total_loss": 0.0,
         "reconstruction_loss": 0.0,
+        "selection_score": 0.0,
         "common_reconstruction_loss": 0.0,
         "common_total_loss": 0.0,
         "kl_loss": 0.0,
@@ -402,6 +403,15 @@ def _run_epoch(
                 )
                 kl_loss = -0.5 * torch.mean(1 + logvar - mu.pow(2) - logvar.exp())
                 total = reconstruction_loss + beta_kl * kl_loss
+            if branch_loss_weights is None:
+                market_end = MultiBranchGRUVAE.n_market_features
+                sector_end = market_end + MultiBranchGRUVAE.n_sector_features
+                market_loss = torch.mean((reconstruction[:, :, :market_end] - batch[:, :, :market_end]) ** 2)
+                sector_loss = torch.mean((reconstruction[:, :, market_end:sector_end] - batch[:, :, market_end:sector_end]) ** 2)
+                idio_loss = torch.mean((reconstruction[:, :, sector_end:] - batch[:, :, sector_end:]) ** 2)
+            # Métrica común de selección: cada bloque aporta exactamente un tercio,
+            # independientemente de su número de variables y de los pesos de training.
+            selection_score = (market_loss + sector_loss + idio_loss) / 3.0
             common_reconstruction_loss = torch.mean((reconstruction - batch) ** 2)
             common_total_loss = common_reconstruction_loss + beta_kl * kl_loss
             if training:
@@ -413,6 +423,7 @@ def _run_epoch(
             n_samples += batch_size
             totals["total_loss"] += float(total.detach()) * batch_size
             totals["reconstruction_loss"] += float(reconstruction_loss.detach()) * batch_size
+            totals["selection_score"] += float(selection_score.detach()) * batch_size
             totals["common_reconstruction_loss"] += float(common_reconstruction_loss.detach()) * batch_size
             totals["common_total_loss"] += float(common_total_loss.detach()) * batch_size
             totals["kl_loss"] += float(kl_loss.detach()) * batch_size
@@ -445,7 +456,10 @@ def train_vae(
     train_loader = _make_loader(train_windows, batch_size, True, seed)
     validation_loader = _make_loader(validation_windows, batch_size, False, seed)
     optimizer = torch.optim.Adam(model.parameters(), lr=learning_rate)
-    valid_selection_metrics = {"reconstruction_loss", "common_reconstruction_loss", "common_total_loss"}
+    valid_selection_metrics = {
+        "selection_score", "reconstruction_loss",
+        "common_reconstruction_loss", "common_total_loss",
+    }
     if selection_metric not in valid_selection_metrics:
         raise ValueError(f"selection_metric debe ser uno de {valid_selection_metrics}")
     history: dict[str, list[float]] = {
@@ -454,6 +468,8 @@ def train_vae(
         "val_total_loss": [],
         "train_reconstruction_loss": [],
         "val_reconstruction_loss": [],
+        "train_selection_score": [],
+        "val_selection_score": [],
         "train_common_reconstruction_loss": [],
         "val_common_reconstruction_loss": [],
         "train_common_total_loss": [],
@@ -479,6 +495,8 @@ def train_vae(
             history[f"val_{metric_name}"].append(val_metrics[metric_name])
         history["train_common_reconstruction_loss"].append(train_metrics["common_reconstruction_loss"])
         history["val_common_reconstruction_loss"].append(val_metrics["common_reconstruction_loss"])
+        history["train_selection_score"].append(train_metrics["selection_score"])
+        history["val_selection_score"].append(val_metrics["selection_score"])
         history["train_common_total_loss"].append(train_metrics["common_total_loss"])
         history["val_common_total_loss"].append(val_metrics["common_total_loss"])
         if branch_loss_weights is not None:
@@ -533,6 +551,7 @@ def train_vae_full_data(
         "epoch": [],
         "train_total_loss": [],
         "train_reconstruction_loss": [],
+        "train_selection_score": [],
         "train_common_reconstruction_loss": [],
         "train_common_total_loss": [],
         "train_kl_loss": [],
@@ -546,6 +565,7 @@ def train_vae_full_data(
         for metric_name in ("total_loss", "reconstruction_loss", "kl_loss"):
             history[f"train_{metric_name}"].append(metrics[metric_name])
         history["train_common_reconstruction_loss"].append(metrics["common_reconstruction_loss"])
+        history["train_selection_score"].append(metrics["selection_score"])
         history["train_common_total_loss"].append(metrics["common_total_loss"])
         if branch_loss_weights is not None:
             for branch in ("market", "sector", "idio"):
@@ -583,8 +603,10 @@ def decode_latent_variants(
 def save_json(path: str | Path, payload: dict[str, Any]) -> None:
     """Save JSON configs with NumPy scalar compatibility."""
     def convert(value: Any) -> Any:
-        if isinstance(value, (np.integer, np.floating)):
+        if isinstance(value, (np.integer, np.floating, np.bool_)):
             return value.item()
+        if isinstance(value, (pd.Timestamp, pd.Timedelta)):
+            return str(value)
         if isinstance(value, Path):
             return str(value)
         if isinstance(value, np.ndarray):
