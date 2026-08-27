@@ -1,0 +1,4 @@
+window_group,window_size,architecture,latent_dim,best_epoch,validation_score,model_path,config_path,scaler_path,history_path,training_figure
+window_5,5,gru_128,64,520,0.2986014187335968,final_models/vae/window_05/model.pt,final_models/vae/window_05/config.json,final_models/vae/window_05/scaler.joblib,final_models/vae/window_05/training_history.csv,reports/figures_final_models/vae/window_05_training.png
+window_7,7,gru_128_128,64,740,0.5374318957328796,final_models/vae/window_07/model.pt,final_models/vae/window_07/config.json,final_models/vae/window_07/scaler.joblib,final_models/vae/window_07/training_history.csv,reports/figures_final_models/vae/window_07_training.png
+window_10,10,gru_256_256,48,272,0.6956459879875183,final_models/vae/window_10/model.pt,final_models/vae/window_10/config.json,final_models/vae/window_10/scaler.joblib,final_models/vae/window_10/training_history.csv,reports/figures_final_models/vae/window_10_training.png

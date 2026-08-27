@@ -18,5 +18,9 @@ venv/
 *.pt
 *.pth
 
+# Artefactos finales que sí deben versionarse
+!final_models/**
+!reports/figures_final_models/**
+
 # Sistema
 .DS_Store
