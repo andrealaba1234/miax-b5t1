@@ -1,0 +1,2 @@
+model_name,model_type,architecture,hidden_dims,dropout,context_length,prediction_horizon,best_epoch,epochs_run,val_selection_score,model_path,scaler_path,config_path,history_path
+multihorizon_5d,ProbabilisticMultiHorizonGRU,gru_48_24_12,"[48, 24, 12]",0.35,20,5,100,250,0.4370733754975455,multihorizon_5d/model.pt,multihorizon_5d/scaler.joblib,multihorizon_5d/config.json,multihorizon_5d/training_history.csv

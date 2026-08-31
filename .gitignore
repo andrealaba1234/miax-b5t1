@@ -17,6 +17,10 @@ venv/
 *.pkl
 *.pt
 *.pth
+models/**/checkpoints/*_scaler.joblib
+
+# Figuras intermedias regenerables
+reports/figures/autoregressive/multihorizon_5d/
 
 # Artefactos finales que sí deben versionarse
 !final_models/**

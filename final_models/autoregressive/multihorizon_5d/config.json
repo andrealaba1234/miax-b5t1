@@ -1,0 +1,27 @@
+{
+  "model_type": "ProbabilisticMultiHorizonGRU",
+  "scikit_learn_version": "1.8.0",
+  "architecture": "gru_48_24_12",
+  "input_dim": 61,
+  "hidden_dims": [48, 24, 12],
+  "dropout": 0.35,
+  "context_length": 20,
+  "prediction_horizon": 5,
+  "loss_weights": {
+    "market": 0.2,
+    "sector": 0.5,
+    "idio": 0.3
+  },
+  "initial_learning_rate": 0.0002,
+  "lr_step_size": 25,
+  "lr_factor": 0.5,
+  "min_learning_rate": 0.000001,
+  "weight_decay": 0.02,
+  "max_epochs": 1000,
+  "early_stopping_patience": 150,
+  "best_epoch": 100,
+  "epochs_run": 250,
+  "validation_selection_score": 0.4370733754975455,
+  "source_candidate_id": 1,
+  "source_search": "long_training_1000_epochs"
+}

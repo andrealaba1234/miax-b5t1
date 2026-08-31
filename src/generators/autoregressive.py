@@ -286,6 +286,11 @@ def train_probabilistic_gru(
     checkpoint_path: str | Path | None = None,
     loss_weights: dict[str, float] | None = None,
     weight_decay: float = 0.0,
+    lr_patience: int | None = None,
+    lr_factor: float = 0.5,
+    lr_step_size: int | None = None,
+    min_learning_rate: float = 1e-5,
+    min_delta: float = 0.0,
 ) -> tuple[dict[str, list[float]], int, float]:
     device = torch.device(device)
     model.to(device)
@@ -294,11 +299,21 @@ def train_probabilistic_gru(
     train_loader = _loader(train_contexts, train_targets, batch_size, True, seed)
     val_loader = _loader(validation_contexts, validation_targets, batch_size, False, seed)
     optimizer = torch.optim.AdamW(model.parameters(), lr=learning_rate, weight_decay=weight_decay)
+    if lr_patience is not None and lr_step_size is not None:
+        raise ValueError("Use either lr_patience or lr_step_size, not both.")
+    if lr_step_size is not None and lr_step_size <= 0:
+        raise ValueError("lr_step_size must be a positive integer.")
+    scheduler = None
+    if lr_patience is not None:
+        scheduler = torch.optim.lr_scheduler.ReduceLROnPlateau(
+            optimizer, mode="min", factor=lr_factor,
+            patience=lr_patience, min_lr=min_learning_rate,
+        )
     metric_names = list(probabilistic_metrics(
         torch.zeros(2, model.input_dim), torch.zeros(2, model.input_dim),
         torch.zeros(2, model.input_dim), loss_weights,
     ))
-    history = {"epoch": []}
+    history = {"epoch": [], "learning_rate": []}
     for prefix in ("train", "val"):
         for metric in metric_names:
             history[f"{prefix}_{metric}"] = []
@@ -309,11 +324,12 @@ def train_probabilistic_gru(
         train_metrics = _epoch(model, train_loader, optimizer, device, loss_weights)
         val_metrics = _epoch(model, val_loader, None, device, loss_weights)
         history["epoch"].append(epoch)
+        history["learning_rate"].append(optimizer.param_groups[0]["lr"])
         for name in metric_names:
             history[f"train_{name}"].append(train_metrics[name])
             history[f"val_{name}"].append(val_metrics[name])
         score = val_metrics["selection_score"]
-        if score < best_score:
+        if score < best_score - min_delta:
             best_score, best_epoch = score, epoch
             best_state = copy.deepcopy(model.state_dict())
             stale = 0
@@ -329,6 +345,14 @@ def train_probabilistic_gru(
             stale += 1
             if stale >= patience:
                 break
+        if scheduler is not None:
+            scheduler.step(score)
+        elif lr_step_size is not None and epoch % lr_step_size == 0:
+            for parameter_group in optimizer.param_groups:
+                parameter_group["lr"] = max(
+                    min_learning_rate,
+                    parameter_group["lr"] * lr_factor,
+                )
     model.load_state_dict(best_state)
     return history, best_epoch, best_score
 
