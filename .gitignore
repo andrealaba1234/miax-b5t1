@@ -27,5 +27,8 @@ reports/figures/autoregressive/multihorizon_5d/
 !final_models/**
 !reports/figures_final_models/**
 
+# Gráficas sueltas de depuración (no forman parte del proyecto)
+tmp_plots/
+
 # Sistema
 .DS_Store

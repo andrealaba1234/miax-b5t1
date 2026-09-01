@@ -41,6 +41,7 @@ def train_predictor_factor(
     max_epochs: int = 1000,
     patience: int = 150,
     learning_rate: float = 0.0002,
+    weight_decay: float = 0.0,
     batch_size: int = 8,
     grad_clip_norm: float = 1.0,
     device: str = "cpu",
@@ -87,7 +88,19 @@ def train_predictor_factor(
     'best_epoch'.
     """
     model.to(device)
-    optimizer = torch.optim.Adam(model.parameters(), lr=learning_rate)
+    # weight_decay solo sobre pesos, no sobre sesgos: el sesgo de la capa de
+    # salida puede llevar una calibración de escala deliberadamente no-nula
+    # (ver init_factor_encoder_near_baseline), y penalizarlo hacia cero
+    # deshace esa calibración en vez de limitarse a frenar el sobreajuste.
+    weight_params = [p for n, p in model.named_parameters() if "bias" not in n]
+    bias_params = [p for n, p in model.named_parameters() if "bias" in n]
+    optimizer = torch.optim.Adam(
+        [
+            {"params": weight_params, "weight_decay": weight_decay},
+            {"params": bias_params, "weight_decay": 0.0},
+        ],
+        lr=learning_rate,
+    )
 
     best_val_loss = float("inf")
     best_state = None
@@ -229,7 +242,18 @@ def train_predictor_factor_residual(
     Igual que train_predictor_factor.
     """
     model.to(device)
-    optimizer = torch.optim.Adam(model.parameters(), lr=learning_rate, weight_decay=weight_decay)
+    # weight_decay solo sobre pesos, no sobre sesgos: mismo motivo que en
+    # train_predictor_factor (ver comentario ahí) — output_layer.bias lleva
+    # la calibración de escala de init_factor_encoder_near_baseline.
+    weight_params = [p for n, p in model.named_parameters() if "bias" not in n]
+    bias_params = [p for n, p in model.named_parameters() if "bias" in n]
+    optimizer = torch.optim.Adam(
+        [
+            {"params": weight_params, "weight_decay": weight_decay},
+            {"params": bias_params, "weight_decay": 0.0},
+        ],
+        lr=learning_rate,
+    )
     scheduler = torch.optim.lr_scheduler.StepLR(optimizer, step_size=lr_step_size, gamma=lr_gamma)
 
     best_val_loss = float("inf")
