@@ -3,6 +3,7 @@ data/raw/*.csv
 data/raw/*.parquet
 data/processed/*.csv
 data/processed/*.parquet
+data/processed/combined_datasets/
 
 # Python
 __pycache__/
